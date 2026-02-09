@@ -1,0 +1,6 @@
+Bill of Lading 9245 Laguna S prings Dr., S uite#200, Elk G rove, CA, 95758-7991 M ailing Address: 1250 Broadway, New York, New York, 10001 Phone: (844) 850-3391 Fax: 916-209-6669 After hour Contact: usdev@ ultraship.ai Load ID LD53657 S hip Date 02-08-2026 09:00 Delivery Date 02-08-2026 09:00 PO Number Pickup 112233ABC Freight Charges Collect COD Prepaid S hipper Consignee 1. AAA , Los Angeles International Airport (LAX), W orld W ay, Los Angeles, CA, U S A 1. xyz ,
+---
+1. AAA , Los Angeles International Airport (LAX), W orld W ay, Los Angeles, CA, U S A 1. xyz , 7470 Cherry Avenue, Fontana, CA 92336, U S A 3rd Party Billing Transportation Company - - # Of U nits Description Of The Commodity W eight Type Class #10000 Ceramic 56000 lbs N/A N/A Notes COD Value abc test notes $64000 U S D Consignor name Date S ignature # of U nits S hipped Time Consignee name Date S ignature # of U nits Received Dem o Powered by U ltraship TM S Page 1 of 2Time
+---
+Dem o Powered by U ltraship TM S Page 1 of 2Time Dem o Powered by U ltraship TM S Page 2 of 2
+---
