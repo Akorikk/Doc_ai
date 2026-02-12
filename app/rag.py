@@ -7,10 +7,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import CHUNK_SIZE, CHUNK_OVERLAP, VECTOR_DIR
 
-# Load embedding model
+# ---------------- LOAD EMBEDDING MODEL ----------------
+
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# -------- PROCESS & STORE --------
+# ---------------- PROCESS & STORE ----------------
 
 def process_and_store(text: str):
 
@@ -21,11 +22,11 @@ def process_and_store(text: str):
 
     chunks = splitter.split_text(text)
 
-    embeddings = model.encode(chunks)
+    embeddings = model.encode(chunks, show_progress_bar=False)
 
-    dim = len(embeddings[0])
+    dim = embeddings.shape[1]
     index = faiss.IndexFlatL2(dim)
-    index.add(np.array(embeddings))
+    index.add(np.array(embeddings).astype("float32"))
 
     os.makedirs(VECTOR_DIR, exist_ok=True)
 
@@ -39,7 +40,7 @@ def process_and_store(text: str):
 
     return len(chunks)
 
-# -------- LOAD INDEX --------
+# ---------------- LOAD INDEX ----------------
 
 def load_index():
 
@@ -47,7 +48,7 @@ def load_index():
     chunk_path = f"{VECTOR_DIR}/chunks.txt"
 
     if not os.path.exists(index_path) or not os.path.exists(chunk_path):
-        raise ValueError("No document uploaded")
+        raise ValueError("Vector store not found")
 
     index = faiss.read_index(index_path)
 
@@ -56,24 +57,40 @@ def load_index():
 
     return index, chunks
 
-# -------- RETRIEVE --------
+# ---------------- RETRIEVE ----------------
 
-def retrieve(query, k=3):
+def retrieve(query: str, k: int = 3):
 
     index, chunks = load_index()
 
-    q_emb = model.encode([query])
-    D, I = index.search(np.array(q_emb), k)
+    q_emb = model.encode([query], show_progress_bar=False)
+    D, I = index.search(np.array(q_emb).astype("float32"), k)
 
-    results = [chunks[i] for i in I[0]]
+    results = [chunks[i] for i in I[0] if i < len(chunks)]
     scores = [float(s) for s in D[0]]
 
     return results, scores
 
-# -------- ANSWER --------
+# ---------------- GENERATE ANSWER ----------------
 
-def generate_answer(query, contexts):
+def generate_answer(query: str, contexts: list[str]) -> str:
+    """
+    Simple extractive answer generator.
+    Returns the most relevant sentence instead of dumping text.
+    """
 
-    context_text = "\n".join(contexts)
+    if not contexts:
+        return "Not found in document"
 
-    return f"Based on the document:\n{context_text[:500]}"
+    context = contexts[0]
+
+    # Split into sentences
+    sentences = context.split(".")
+
+    # Pick first meaningful sentence
+    for s in sentences:
+        s = s.strip()
+        if len(s) > 20:
+            return s + "."
+
+    return context[:200] + "..."

@@ -1,5 +1,11 @@
 from pypdf import PdfReader
 import docx
+import re
+
+def clean_text(text: str) -> str:
+    text = re.sub(r"\s+", " ", text)  # remove extra spaces
+    text = re.sub(r"\n+", "\n", text)
+    return text.strip()
 
 def parse_document(file_path: str) -> str:
     text = ""
@@ -7,8 +13,9 @@ def parse_document(file_path: str) -> str:
     if file_path.endswith(".pdf"):
         reader = PdfReader(file_path)
         for page in reader.pages:
-            if page.extract_text():
-                text += page.extract_text()
+            t = page.extract_text()
+            if t:
+                text += t + "\n"
 
     elif file_path.endswith(".docx"):
         doc = docx.Document(file_path)
@@ -18,4 +25,4 @@ def parse_document(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
 
-    return text
+    return clean_text(text)
