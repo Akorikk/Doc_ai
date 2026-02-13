@@ -1,6 +1,7 @@
 import os
 import faiss
 import numpy as np
+import re
 
 from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -30,10 +31,8 @@ def process_and_store(text: str):
 
     os.makedirs(VECTOR_DIR, exist_ok=True)
 
-    # Save FAISS index
     faiss.write_index(index, f"{VECTOR_DIR}/faiss.index")
 
-    # Save chunks
     with open(f"{VECTOR_DIR}/chunks.txt", "w", encoding="utf-8") as f:
         for c in chunks:
             f.write(c.replace("\n", " ") + "\n---\n")
@@ -47,7 +46,7 @@ def load_index():
     index_path = f"{VECTOR_DIR}/faiss.index"
     chunk_path = f"{VECTOR_DIR}/chunks.txt"
 
-    if not os.path.exists(index_path) or not os.path.exists(chunk_path):
+    if not os.path.exists(index_path):
         raise ValueError("Vector store not found")
 
     index = faiss.read_index(index_path)
@@ -74,23 +73,46 @@ def retrieve(query: str, k: int = 3):
 # ---------------- GENERATE ANSWER ----------------
 
 def generate_answer(query: str, contexts: list[str]) -> str:
-    """
-    Simple extractive answer generator.
-    Returns the most relevant sentence instead of dumping text.
-    """
 
     if not contexts:
         return "Not found in document"
 
     context = contexts[0]
 
-    # Split into sentences
-    sentences = context.split(".")
+    # Extract dollar values if asking about rate
+    if "rate" in query.lower() or "$" in context:
+        m = re.search(r"\$\s?\d[\d,]*", context)
+        if m:
+            return m.group()
 
-    # Pick first meaningful sentence
+    sentences = re.split(r"[.\n]", context)
+
     for s in sentences:
         s = s.strip()
-        if len(s) > 20:
-            return s + "."
+        if len(s) > 25:
+            return s
 
-    return context[:200] + "..."
+    return context[:200]
+
+# ---------------- GPT-STYLE REWRITER ----------------
+
+def rewrite_answer(answer: str) -> str:
+
+    if not answer:
+        return answer
+
+    answer = answer.strip()
+
+    # If numeric or dollar amount → make natural
+    if answer.startswith("$"):
+        return f"The rate is {answer}."
+
+    replacements = {
+        "According to the document,": "Based on the document,",
+        "The document states that": "It is stated that",
+    }
+
+    for k, v in replacements.items():
+        answer = answer.replace(k, v)
+
+    return answer[0].upper() + answer[1:]
